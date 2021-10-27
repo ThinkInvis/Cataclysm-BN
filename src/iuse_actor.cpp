@@ -4419,6 +4419,25 @@ int mutagen_actor::use( player &p, item &it, bool, const tripoint & ) const
     return it.type->charges_to_use();
 }
 
+std::unique_ptr<iuse_actor> mutagen_points_actor::clone() const
+{
+    return std::make_unique<mutagen_points_actor>(*this);
+}
+
+void mutagen_points_actor::load(const JsonObject& obj)
+{
+    strength = obj.get_int("strength", 4);
+}
+
+int mutagen_points_actor::use(player& p, item& it, bool, const tripoint&) const
+{
+    p.as_avatar()->change_mutation_pointbuy_points(strength);
+
+    p.add_msg_if_player(_("You gain %d mutation points."), strength);
+
+    return it.type->charges_to_use();
+}
+
 std::unique_ptr<iuse_actor> mutagen_iv_actor::clone() const
 {
     return std::make_unique<mutagen_iv_actor>( *this );

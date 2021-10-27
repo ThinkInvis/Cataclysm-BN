@@ -1139,6 +1139,20 @@ class mutagen_actor : public iuse_actor
         std::unique_ptr<iuse_actor> clone() const override;
 };
 
+class mutagen_points_actor : public iuse_actor
+{
+    public:
+        int strength = 4;
+
+        mutagen_points_actor() : iuse_actor("mutagen_points") {}
+
+        ~mutagen_points_actor() override = default;
+        void load(const JsonObject& obj) override;
+        int use(player&, item&, bool, const tripoint&) const override;
+        std::unique_ptr<iuse_actor> clone() const override;
+
+};
+
 class mutagen_iv_actor : public iuse_actor
 {
     public:

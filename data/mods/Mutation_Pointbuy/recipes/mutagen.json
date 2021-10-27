@@ -1,0 +1,41 @@
+[
+  {
+    "type": "recipe",
+    "result": "mutagen_early",
+    "category": "CC_CHEM",
+    "subcategory": "CSC_CHEM_MUTAGEN",
+    "skill_used": "cooking",
+    "skills_required": [ "firstaid", 1 ],
+    "difficulty": 3,
+    "time": "60 m",
+    "batch_time_factors": [ 80, 20 ],
+	"autolearn": true,
+    "qualities": [ { "id": "CHEM", "level": 1 }, { "id": "CUT", "level": 1 } ],
+    "tools": [ [ [ "surface_heat", 25, "LIST" ] ] ],
+    "components": [
+      [
+        [ "tallow_tainted", 8 ],
+        [ "meat_tainted", 12 ],
+        [ "dry_meat_tainted", 12 ]
+      ]
+    ]
+  },
+  {
+    "type": "recipe",
+    "result": "mutagen_points",
+    "category": "CC_CHEM",
+    "subcategory": "CSC_CHEM_MUTAGEN",
+    "skill_used": "cooking",
+    "skills_required": [ "firstaid", 3 ],
+    "difficulty": 9,
+    "time": "2 h",
+    "batch_time_factors": [ 20, 5 ],
+    "book_learn": [ [ "recipe_serum", 8 ], [ "recipe_labchem", 9 ] ],
+    "using": [ [ "serum_production_standard", 37 ] ],
+    "components": [
+		[ [ "mutagen", 2 ] ],
+		[ [ "anesthetic", 100 ] ]
+	],
+    "flags": [ "SECRET" ]
+  }
+]
