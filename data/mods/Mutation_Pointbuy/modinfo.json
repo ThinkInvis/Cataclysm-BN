@@ -1,0 +1,19 @@
+[
+  {
+    "type": "MOD_INFO",
+    "id": "mutation_pointbuy",
+    "name": "Mutation Pointbuy",
+    "authors": [ "ThinkInvisible" ],
+    "maintainers": [ "ThinkInvisible" ],
+    "description": "Changes to mutations which bring them more on par with CBMs, most notably earlier availability and a way around RNG mishaps.",
+    "category": "rebalance",
+    "dependencies": [ "dda" ]
+  },
+  {
+    "type": "EXTERNAL_OPTION",
+    "name": "MUTATION_POINTBUY",
+    "stype": "bool",
+    "value": true,
+	"info": ""
+  }
+]

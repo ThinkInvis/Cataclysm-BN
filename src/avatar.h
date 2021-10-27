@@ -190,6 +190,11 @@ class avatar : public player
         // how much "kill xp" you have
         int kill_xp() const;
 
+        int get_mutation_pointbuy_points() const;
+        void change_mutation_pointbuy_points(int amount_by);
+        void mutate_pointbuy();
+        bool calc_can_pointbuy_mutation(mutation_branch b);
+
         faction *get_faction() const override;
         // Set in npc::talk_to_you for use in further NPC interactions
         bool dialogue_by_radio = false;
@@ -253,6 +258,8 @@ class avatar : public player
         int dex_upgrade = 0;
         int int_upgrade = 0;
         int per_upgrade = 0;
+
+        int mutation_pointbuy_points = 0;
 
         monster_visible_info mon_visible;
 };

@@ -957,6 +957,8 @@ void avatar::store( JsonOut &json ) const
     json.member( "int_upgrade", std::abs( int_upgrade ) );
     json.member( "per_upgrade", std::abs( per_upgrade ) );
 
+    json.member("mutation_pointbuy_points", mutation_pointbuy_points);
+
     // npc: unimplemented, potentially useful
     json.member( "learned_recipes", *learned_recipes );
 
@@ -1037,6 +1039,8 @@ void avatar::load( const JsonObject &data )
         int_upgrade = -int_upgrade;
         per_upgrade = -per_upgrade;
     }
+
+    data.read("mutation_pointbuy_points", mutation_pointbuy_points);
 
     data.read( "magic", magic );
 

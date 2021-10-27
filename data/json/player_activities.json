@@ -751,6 +751,14 @@
     "no_resume": true
   },
   {
+    "id": "ACT_MUTATION_POINTBUY",
+    "type": "activity_type",
+    "verb": "meditating on change",
+    "suspendable": false,
+    "based_on": "time",
+    "no_resume": true
+  },
+  {
     "id": "ACT_MIGRATION_CANCEL",
     "type": "activity_type",
     "verb": "canceling activity serialized with legacy code",

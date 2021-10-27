@@ -153,6 +153,7 @@ static const activity_id ACT_MULTIPLE_CONSTRUCTION( "ACT_MULTIPLE_CONSTRUCTION" 
 static const activity_id ACT_MULTIPLE_MINE( "ACT_MULTIPLE_MINE" );
 static const activity_id ACT_MULTIPLE_FARM( "ACT_MULTIPLE_FARM" );
 static const activity_id ACT_MULTIPLE_FISH( "ACT_MULTIPLE_FISH" );
+static const activity_id ACT_MUTATION_POINTBUY("ACT_MUTATION_POINTBUY");
 static const activity_id ACT_OPERATION( "ACT_OPERATION" );
 static const activity_id ACT_OXYTORCH( "ACT_OXYTORCH" );
 static const activity_id ACT_PICKAXE( "ACT_PICKAXE" );
@@ -251,6 +252,7 @@ static const bionic_id bio_painkiller( "bio_painkiller" );
 static const itype_id itype_UPS( "UPS" );
 
 static const trait_id trait_DEBUG_HS( "DEBUG_HS" );
+static const trait_id trait_MUT_JUNKIE("MUT_JUNKIE");
 static const trait_id trait_NOPAIN( "NOPAIN" );
 static const trait_id trait_SPIRITUAL( "SPIRITUAL" );
 static const trait_id trait_STOCKY_TROGLO( "STOCKY_TROGLO" );
@@ -412,7 +414,8 @@ activity_handlers::finish_functions = {
     { ACT_ROBOT_CONTROL, robot_control_finish },
     { ACT_MIND_SPLICER, mind_splicer_finish },
     { ACT_SPELLCASTING, spellcasting_finish },
-    { ACT_STUDY_SPELL, study_spell_finish }
+    { ACT_STUDY_SPELL, study_spell_finish },
+    { ACT_MUTATION_POINTBUY, mutation_pointbuy_finish }
 };
 
 bool activity_handlers::resume_for_multi_activities( player &p )
@@ -4630,6 +4633,43 @@ void activity_handlers::study_spell_finish( player_activity *act, player *p )
     if( act->values[2] == -1 ) {
         p->add_msg_if_player( m_bad, _( "It's too dark to read." ) );
     }
+}
+
+void activity_handlers::mutation_pointbuy_finish(player_activity* act, player* p)
+{
+    act->set_to_null();
+
+    const int delta_points = act->get_value(0);
+    trait_id trait(act->name);
+
+    p->as_avatar()->change_mutation_pointbuy_points(delta_points);
+
+    int rc = 0;
+    bool goal_is_removal = p->has_trait(trait);
+    if (goal_is_removal) {
+        do {
+            p->remove_mutation(trait);
+            rc++;
+        } while (p->has_trait(trait) && rc < 10);
+    }
+    else {
+        do {
+            p->mutate_towards(trait);
+            rc++;
+        } while (!p->has_trait(trait) && rc < 10);
+    }
+
+    // slower and gentler process; less calorie burn and pain than normal mutation
+    p->mod_stored_nutr(4);
+    p->mod_thirst(2);
+    p->mod_fatigue(4);
+
+    if (p->has_trait(trait_MUT_JUNKIE)) {
+        p->add_msg_if_player(m_good, _("You shake off your meditation and find yourself changed.  The prospect excites you."));
+        p->add_morale(MORALE_MUTAGEN, 3, 50);
+    }
+    else
+        p->add_msg_if_player(m_good, _("You shake off your meditation and find yourself changed."));
 }
 
 //This is just used for robofac_intercom_mission_2

@@ -48,6 +48,7 @@
 #include "morale.h"
 #include "morale_types.h"
 #include "mtype.h"
+#include "mutation.h"
 #include "npc.h"
 #include "optional.h"
 #include "options.h"
@@ -73,6 +74,7 @@
 #include "vpart_position.h"
 
 static const activity_id ACT_READ( "ACT_READ" );
+static const activity_id ACT_MUTATION_POINTBUY("ACT_MUTATION_POINTBUY");
 
 static const bionic_id bio_eye_optic( "bio_eye_optic" );
 static const bionic_id bio_memory( "bio_memory" );
@@ -1402,6 +1404,306 @@ void avatar::upgrade_stat_prompt( const character_stat &stat )
                 debugmsg( "Tried to use invalid stat" );
                 break;
         }
+    }
+}
+
+int avatar::get_mutation_pointbuy_points() const {
+    return mutation_pointbuy_points;
+}
+
+void avatar::change_mutation_pointbuy_points(int amount_by) {
+    mutation_pointbuy_points += amount_by;
+}
+
+//multiplier for points refunded from adding negatives/removing positives
+const float MUTATION_POINTBUY_REFUND_RATIO = 0.5;
+//multiplier for points required for adding positives/removing negatives
+const float MUTATION_POINTBUY_SPEND_RATIO = 1;
+//exponential scaling for pointbuy points vs actual mutation value; e.g. MPES of 2 results in mutations worth 3 points costing 9 (3^2) pointbuy points to obtain
+//applies before the direct ratio scalars above
+const float MUTATION_POINTBUY_EXPONENTIAL_SCALING = 2;
+//time required per point, calculated before ratios and before exponential scaling
+const int MUTATION_POINTBUY_TIME_MINUTES = 30;
+//delta points for changing a free mutation
+const int MUTATION_POINTBUY_FREE_DELTA = -1;
+
+class mutate_pointbuy_callback : public uilist_callback
+{
+public:
+    // Last menu entry
+    int lastlen = 0;
+    // Feedback message
+    std::string msg;
+    bool started = false;
+    std::vector<trait_id> vTraits;
+    std::map<trait_id, bool> pTraits;
+    player* p;
+
+    nc_color mcolor(const trait_id& m) {
+        if (pTraits[m]) {
+            return c_green;
+        }
+        return c_light_gray;
+    }
+
+    mutate_pointbuy_callback() = default;
+    bool key(const input_context&, const input_event& event, int entnum, uilist* menu) override {
+        return false;
+    }
+
+    void refresh(uilist* menu) override {
+        if (!started) {
+            started = true;
+            for (auto& traits_iter : mutation_branch::get_all()) {
+                if (!p->as_avatar()->calc_can_pointbuy_mutation(traits_iter)) continue;
+                vTraits.push_back(traits_iter.id);
+                pTraits[traits_iter.id] = p->has_trait(traits_iter.id);
+            }
+        }
+
+        const std::string padding = std::string(menu->pad_right - 1, ' ');
+
+        const int startx = menu->w_width - menu->pad_right;
+        for (int i = 2; i < lastlen; i++) {
+            mvwprintw(menu->window, point(startx, i), padding);
+        }
+
+        int line2 = 4;
+
+        if (menu->selected >= 0 && static_cast<size_t>(menu->selected) < vTraits.size()) {
+            const mutation_branch& mdata = vTraits[menu->selected].obj();
+
+            mvwprintw(menu->window, point(startx, 3),
+                mdata.valid ? _("Valid") : _("Nonvalid"));
+
+            if (!mdata.prereqs.empty()) {
+                line2++;
+                mvwprintz(menu->window, point(startx, line2), c_light_gray, _("Prereqs:"));
+                for (const trait_id& j : mdata.prereqs) {
+                    mvwprintz(menu->window, point(startx + 11, line2), mcolor(j),
+                        mutation_branch::get_name(j));
+                    line2++;
+                }
+            }
+
+            if (!mdata.prereqs2.empty()) {
+                line2++;
+                mvwprintz(menu->window, point(startx, line2), c_light_gray, _("Prereqs, 2d:"));
+                for (const trait_id& j : mdata.prereqs2) {
+                    mvwprintz(menu->window, point(startx + 15, line2), mcolor(j),
+                        mutation_branch::get_name(j));
+                    line2++;
+                }
+            }
+
+            if (!mdata.threshreq.empty()) {
+                line2++;
+                mvwprintz(menu->window, point(startx, line2), c_light_gray, _("Thresholds required:"));
+                for (const trait_id& j : mdata.threshreq) {
+                    mvwprintz(menu->window, point(startx + 21, line2), mcolor(j),
+                        mutation_branch::get_name(j));
+                    line2++;
+                }
+            }
+
+            if (!mdata.cancels.empty()) {
+                line2++;
+                mvwprintz(menu->window, point(startx, line2), c_light_gray, _("Cancels:"));
+                for (const trait_id& j : mdata.cancels) {
+                    mvwprintz(menu->window, point(startx + 11, line2), mcolor(j),
+                        mutation_branch::get_name(j));
+                    line2++;
+                }
+            }
+
+            if (!mdata.replacements.empty()) {
+                line2++;
+                mvwprintz(menu->window, point(startx, line2), c_light_gray, _("Becomes:"));
+                for (const trait_id& j : mdata.replacements) {
+                    mvwprintz(menu->window, point(startx + 11, line2), mcolor(j),
+                        mutation_branch::get_name(j));
+                    line2++;
+                }
+            }
+
+            if (!mdata.additions.empty()) {
+                line2++;
+                mvwprintz(menu->window, point(startx, line2), c_light_gray, _("Add-ons:"));
+                for (auto& j : mdata.additions) {
+                    mvwprintz(menu->window, point(startx + 11, line2), mcolor(j),
+                        mutation_branch::get_name(j));
+                    line2++;
+                }
+            }
+
+            if (!mdata.types.empty()) {
+                line2++;
+                mvwprintz(menu->window, point(startx, line2), c_light_gray, _("Type:"));
+                for (auto& j : mdata.types) {
+                    mvwprintw(menu->window, point(startx + 11, line2), j);
+                    line2++;
+                }
+            }
+
+            if (!mdata.category.empty()) {
+                line2++;
+                mvwprintz(menu->window, point(startx, line2), c_light_gray, _("Category:"));
+                for (auto& j : mdata.category) {
+                    mvwprintw(menu->window, point(startx + 11, line2), j);
+                    line2++;
+                }
+            }
+            line2 += 2;
+
+            //~ pts: points, vis: visibility, ugly: ugliness
+            mvwprintz(menu->window, point(startx, line2), c_light_gray, _("pts: %d vis: %d ugly: %d"),
+                mdata.points,
+                mdata.visibility,
+                mdata.ugliness
+            );
+            line2 += 2;
+
+            std::vector<std::string> desc = foldstring(mdata.desc(),
+                menu->pad_right - 1);
+            for (auto& elem : desc) {
+                mvwprintz(menu->window, point(startx, line2), c_light_gray, elem);
+                line2++;
+            }
+        }
+
+        lastlen = line2 + 1;
+
+        mvwprintz(menu->window, point(startx, menu->w_height - 3), c_green, msg);
+        msg.clear();
+        input_context ctxt(menu->input_category);
+        mvwprintw(menu->window, point(startx, menu->w_height - 2),
+            _("[%s] find, [%s] quit | %d points available"),
+            ctxt.get_desc("FILTER"), ctxt.get_desc("QUIT"), p->as_avatar()->get_mutation_pointbuy_points());
+
+        wnoutrefresh(menu->window);
+    }
+
+    ~mutate_pointbuy_callback() override = default;
+};
+
+int calc_mutation_pointbuy_delta(mutation_branch b, bool is_removing) {
+    int delta_points = ((b.points > 0) ? -1 : 1) //invert points -- good mutations (positive value) cause negative delta points
+        * std::pow(std::abs(b.points), MUTATION_POINTBUY_EXPONENTIAL_SCALING);
+    if (is_removing) delta_points = -delta_points; //invert again if removing
+
+    if (delta_points < 0) delta_points = std::min((int)(delta_points * MUTATION_POINTBUY_SPEND_RATIO), -1);
+    else if (delta_points > 0) delta_points = std::max((int)(delta_points * MUTATION_POINTBUY_REFUND_RATIO), 1);
+    else delta_points = MUTATION_POINTBUY_FREE_DELTA;
+
+    return delta_points;
+}
+
+bool avatar::calc_can_pointbuy_mutation(mutation_branch b) {
+    //mutation is invalid
+    // || !b.valid
+    if (b.threshold || b.profession || b.debug || !b.purifiable || (!mutation_ok(b.id, false, false) && !has_trait(b.id)))
+        return false;
+    //should remove higher trait instead
+    if (has_higher_trait(b.id))
+        return false;
+    //can't get there from here in only one step: non-prereq conflict of same type
+    std::vector<trait_id> same_type = get_mutations_in_types(b.types);
+    for (const auto& consider : same_type) {
+        if (!has_trait(consider) || consider == b.id) continue;
+        bool is_prereq = false;
+        if (std::find(b.prereqs.begin(), b.prereqs.end(), consider) != b.prereqs.end()) {
+            is_prereq = true;
+        }
+        if (std::find(b.prereqs2.begin(), b.prereqs2.end(), consider) != b.prereqs2.end()) {
+            is_prereq = true;
+        }
+        if (!is_prereq) return false;
+    }
+    //can't get there from here in only one step: missing prereqs
+    bool prereq1 = b.prereqs.size() == 0, prereq2 = b.prereqs2.size() == 0;
+    for (size_t i = 0; (!prereq1) && i < b.prereqs.size(); i++) {
+        if (has_trait(b.prereqs[i])) {
+            prereq1 = true;
+        }
+    }
+    for (size_t i = 0; (!prereq2) && i < b.prereqs2.size(); i++) {
+        if (has_trait(b.prereqs2[i])) {
+            prereq2 = true;
+        }
+    }
+    if (!prereq1 || !prereq2)
+        return false;
+    //missing threshreq
+    bool has_threshreq = b.threshreq.size() == 0;
+    for (size_t i = 0; !has_threshreq && i < b.threshreq.size(); i++) {
+        if (has_trait(b.threshreq[i])) {
+            has_threshreq = true;
+        }
+    }
+    if (!has_threshreq)
+        return false;
+    //mutation costs points and would cost more than we have
+    int cost = calc_mutation_pointbuy_delta(b, has_trait(b.id));
+    if (cost < 0 && -cost > get_mutation_pointbuy_points())
+        return false;
+    //all checks passed
+    return true;
+}
+
+void avatar::mutate_pointbuy()
+{
+    uilist wmenu;
+    int c = 0;
+
+    for (auto& traits_iter : mutation_branch::get_all()) {
+        if (!calc_can_pointbuy_mutation(traits_iter)) continue;
+        wmenu.addentry(-1, true, -2, traits_iter.name());
+        wmenu.entries[c].extratxt.left = 1;
+        wmenu.entries[c].extratxt.txt.clear();
+        wmenu.entries[c].extratxt.color = c_light_green;
+        wmenu.entries[c].hilite_color = h_light_green;
+        if (has_trait(traits_iter.id)) {
+            wmenu.entries[c].text_color = c_green;
+            wmenu.entries[c].override_hilite_color = true;
+            if (has_base_trait(traits_iter.id)) {
+                wmenu.entries[c].extratxt.txt = "T";
+            }
+        }
+        c++;
+    }
+    wmenu.w_x_setup = 0;
+    wmenu.w_width_setup = []() -> int {
+        return TERMX;
+    };
+    wmenu.pad_right_setup = []() -> int {
+        return TERMX - 40;
+    };
+    wmenu.selected = 0;
+    mutate_pointbuy_callback cb;
+    cb.p = this;
+    wmenu.callback = &cb;
+    wmenu.query();
+    if (wmenu.ret >= 0) {
+        int rc = 0;
+        const trait_id mstr = cb.vTraits[wmenu.ret];
+        const auto& mdata = mstr.obj();
+
+        int delta_points = calc_mutation_pointbuy_delta(mdata, has_trait(mstr));
+        int time_cost_minutes = std::max(std::abs(mdata.points), 1) * MUTATION_POINTBUY_TIME_MINUTES;
+
+        bool proceed = query_yn(string_format(_("%s %s will %s %d mutation points and take %d minutes. Once this process ends, you will be left with %d mutation points. Are you sure?"), has_trait(mstr) ? "Losing" : "Gaining", mstr.c_str(), delta_points > 0 ? "provide" : "consume", delta_points, time_cost_minutes, mutation_pointbuy_points+delta_points));
+
+        if (!proceed) return;
+
+        player_activity new_act(ACT_MUTATION_POINTBUY, to_turns<int>(time_cost_minutes * 1_minutes) * 100, 0);
+
+        new_act.name = mstr.c_str();
+        //0: delta points
+        new_act.values.emplace_back(delta_points);
+
+        assign_activity(new_act, false);
+
+        add_msg_if_player(m_neutral, _("A voice has been whispering in your mind, promising that you could be so much more.  You sit and listen, focusing intently on a goal..."));
     }
 }
 

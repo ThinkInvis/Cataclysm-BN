@@ -1044,6 +1044,13 @@ static bool handle_player_display_action( player &you, unsigned int &line,
                 invalidate_tab( curtab );
                 break;
             }
+            case player_display_tab::traits: {
+                if (get_option<bool>("MUTATION_POINTBUY") && you.is_avatar()) {
+                    you.as_avatar()->mutate_pointbuy();
+                }
+                done = true;
+                break;
+            }
         }
     } else if( action == "CHANGE_PROFESSION_NAME" ) {
         string_input_popup popup;
