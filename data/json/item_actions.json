@@ -696,6 +696,11 @@
   },
   {
     "type": "item_action",
+    "id": "mutagen_points",
+    "name": { "str": "Consume" }
+  },
+  {
+    "type": "item_action",
     "id": "mutagen_iv",
     "name": { "str": "Inject" }
   },
