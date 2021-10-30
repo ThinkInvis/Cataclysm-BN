@@ -7,8 +7,8 @@
     "description": "A substance you reduced out of some chopped zombie bits on a whim.  It reeks of… change.  And dead meat.",
     "color": "light_green",
     "price": 20000,
-    "use_action": { "type": "mutagen" }
     "fun": -5,
+    "use_action": { "type": "mutagen", "is_weak": "true" }
   },
   {
     "id": "mutagen_points",
