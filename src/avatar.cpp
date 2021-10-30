@@ -1703,7 +1703,7 @@ void avatar::mutate_pointbuy()
 
         assign_activity(new_act, false);
 
-        add_msg_if_player(m_neutral, _("A voice has been whispering in your mind, promising that you could be so much more.  You sit and listen, focusing intently on a goal..."));
+        add_msg_if_player(m_neutral, _("A voice has been whispering in your mind, promising that you could be so much more.  You sit and listen, focusing intently on a goal…"));
     }
 }
 
