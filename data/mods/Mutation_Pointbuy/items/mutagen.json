@@ -8,7 +8,7 @@
     "color": "light_green",
     "price": 20000,
     "fun": -5,
-    "use_action": { "type": "mutagen", "is_weak": "true" }
+    "use_action": { "type": "mutagen", "is_weak": true }
   },
   {
     "id": "mutagen_points",
