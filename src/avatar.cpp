@@ -1650,7 +1650,7 @@ bool avatar::calc_can_pointbuy_mutation( mutation_branch m )
         return false;
     }
     //mutation costs points and would cost more than we have
-    int cost = calc_mutation_pointbuy_delta( m.id );
+    int cost = -calc_mutation_pointbuy_delta( m.id );
     if( cost < 0 && -cost > get_mutation_pointbuy_points() ) {
         return false;
     }
@@ -1701,7 +1701,7 @@ void avatar::mutate_pointbuy()
         const trait_id mstr = cb.vTraits[wmenu.ret];
         const auto &mdata = mstr.obj();
 
-        int delta_points = calc_mutation_pointbuy_delta( mdata.id );
+        int delta_points = -calc_mutation_pointbuy_delta( mdata.id );
         int time_cost_minutes = std::max( std::abs( mdata.points ), 1 ) * MUTATION_POINTBUY_TIME_MINUTES;
 
         bool proceed = query_yn( string_format(
