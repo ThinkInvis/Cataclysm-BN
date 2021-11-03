@@ -1309,8 +1309,7 @@ std::map<trait_id, bool> Character::mutate_towards_hypothetical( const trait_id 
     for( size_t i = 0; i < cancel.size(); i++ ) {
         if( !cancel.empty() ) {
             trait_id removed = cancel[i];
-            auto removals = remove_mutation_hypothetical( removed );
-            retv.insert( removals.begin(), removals.end() );
+            retv = remove_mutation_hypothetical( removed, retv );
             cancel.erase( cancel.begin() + i );
             i--;
             // This checks for cases where one trait knocks out several others
@@ -1403,15 +1402,15 @@ std::map<trait_id, bool> Character::mutate_towards_hypothetical( const trait_id 
     }
 
     if( replacing ) {
-        auto removals = remove_mutation_hypothetical( replacing );
+        auto removals = remove_mutation_hypothetical( replacing, retv );
         retv.insert( removals.begin(), removals.end() );
     }
     if( replacing2 ) {
-        auto removals = remove_mutation_hypothetical( replacing2 );
+        auto removals = remove_mutation_hypothetical( replacing2, retv );
         retv.insert( removals.begin(), removals.end() );
     }
     for( const auto &i : canceltrait ) {
-        auto removals = remove_mutation_hypothetical( i );
+        auto removals = remove_mutation_hypothetical( i, retv );
         retv.insert( removals.begin(), removals.end() );
     }
 
@@ -1648,10 +1647,9 @@ bool Character::mutate_towards( const trait_id &mut )
     return true;
 }
 
-std::map<trait_id, bool> Character::remove_mutation_hypothetical( const trait_id &mut )
+std::map<trait_id, bool> Character::remove_mutation_hypothetical( const trait_id &mut,
+        std::map<trait_id, bool> retv )
 {
-    std::map<trait_id, bool> retv;
-
     const auto &mdata = mut.obj();
     // Check if there's a prerequisite we should shrink back into
     trait_id replacing = trait_id::NULL_ID();

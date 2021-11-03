@@ -964,7 +964,8 @@ class Character : public Creature, public visitable<Character>
         /** Removes a mutation, downgrading to the previous level if possible */
         void remove_mutation( const trait_id &mut, bool silent = false );
         /** Find which mutation changes would result from a call to remove_mutation */
-        std::map<trait_id, bool> remove_mutation_hypothetical( const trait_id &mut );
+        std::map<trait_id, bool> remove_mutation_hypothetical( const trait_id &mut,
+                std::map<trait_id, bool> retv = std::map<trait_id, bool>() );
         /** Calculate genetic score after adding/removing this mutation, taking into account upgrades, downgrades, etc. */
         int calc_genetic_score_hypothetical( const trait_id &mut );
         /** Calculate percentage chances for mutations */
