@@ -1045,7 +1045,7 @@ static bool handle_player_display_action( player &you, unsigned int &line,
                 break;
             }
             case player_display_tab::traits: {
-                if (get_option<bool>("MUTATION_POINTBUY") && you.is_avatar()) {
+                if( get_option<bool>( "MUTATION_POINTBUY" ) && you.is_avatar() ) {
                     you.as_avatar()->mutate_pointbuy();
                 }
                 done = true;

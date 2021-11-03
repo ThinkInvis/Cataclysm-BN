@@ -261,7 +261,7 @@ void robot_control_finish( player_activity *act, player *p );
 void mind_splicer_finish( player_activity *act, player *p );
 void spellcasting_finish( player_activity *act, player *p );
 void study_spell_finish( player_activity *act, player *p );
-void mutation_pointbuy_finish(player_activity* act, player* p);
+void mutation_pointbuy_finish( player_activity *act, player *p );
 
 void try_sleep_query( player_activity *act, player *p );
 

@@ -191,9 +191,9 @@ class avatar : public player
         int kill_xp() const;
 
         int get_mutation_pointbuy_points() const;
-        void change_mutation_pointbuy_points(int amount_by);
+        void change_mutation_pointbuy_points( int amount_by );
         void mutate_pointbuy();
-        bool calc_can_pointbuy_mutation(mutation_branch b);
+        bool calc_can_pointbuy_mutation( mutation_branch b );
 
         faction *get_faction() const override;
         // Set in npc::talk_to_you for use in further NPC interactions
