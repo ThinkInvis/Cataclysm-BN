@@ -1710,7 +1710,7 @@ void avatar::mutate_pointbuy()
         bool proceed = query_yn( string_format(
                                      _( "%s %s will %s %d mutation points and take %d minutes. Once this process ends, you will be left with %d mutation points. Are you sure?" ),
                                      has_trait( mstr ) ? "Losing" : "Gaining", mstr.c_str(), delta_points > 0 ? "provide" : "consume",
-                                     std::abs(delta_points), time_cost_minutes, mutation_pointbuy_points + delta_points ) );
+                                     std::abs( delta_points ), time_cost_minutes, mutation_pointbuy_points + delta_points ) );
 
         if( !proceed ) {
             return;
