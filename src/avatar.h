@@ -192,7 +192,9 @@ class avatar : public player
 
         int get_mutation_pointbuy_points() const;
         void change_mutation_pointbuy_points( int amount_by );
+        /** Bring up the main Mutation Pointbuy menu */
         void mutate_pointbuy();
+        /** Determine whether the target mutation is valid for pointbuy */
         bool calc_can_pointbuy_mutation( mutation_branch b );
 
         faction *get_faction() const override;

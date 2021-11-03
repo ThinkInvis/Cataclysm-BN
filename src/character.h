@@ -1002,6 +1002,9 @@ class Character : public Creature, public visitable<Character>
         float mutation_armor( bodypart_id bp, damage_type dt ) const;
         float mutation_armor( bodypart_id bp, const damage_unit &du ) const;
 
+        /** Mutation Pointbuy mod: calculate the change in pointbuy score required to add/remove this mutation */
+        int calc_mutation_pointbuy_delta( const trait_id &mut );
+
         // --------------- Bionic Stuff ---------------
         /** Handles bionic activation effects of the entered bionic, returns if anything activated */
         bool activate_bionic( int b, bool eff_only = false );

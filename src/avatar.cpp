@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "action.h"
+#include "bionics.h"
 #include "bodypart.h"
 #include "calendar.h"
 #include "cata_utility.h"
@@ -1417,18 +1418,6 @@ void avatar::change_mutation_pointbuy_points( int amount_by )
     mutation_pointbuy_points += amount_by;
 }
 
-//multiplier for points refunded from adding negatives/removing positives
-const float MUTATION_POINTBUY_REFUND_RATIO = 0.5;
-//multiplier for points required for adding positives/removing negatives
-const float MUTATION_POINTBUY_SPEND_RATIO = 1;
-//exponential scaling for pointbuy points vs actual mutation value; e.g. MPES of 2 results in mutations worth 3 points costing 9 (3^2) pointbuy points to obtain
-//applies before the direct ratio scalars above
-const float MUTATION_POINTBUY_EXPONENTIAL_SCALING = 2;
-//time required per point, calculated before ratios and before exponential scaling
-const int MUTATION_POINTBUY_TIME_MINUTES = 30;
-//delta points for changing a free mutation
-const int MUTATION_POINTBUY_FREE_DELTA = -1;
-
 class mutate_pointbuy_callback : public uilist_callback
 {
     public:
@@ -1591,49 +1580,54 @@ class mutate_pointbuy_callback : public uilist_callback
         ~mutate_pointbuy_callback() override = default;
 };
 
-int calc_mutation_pointbuy_delta( mutation_branch b, bool is_removing )
+bool avatar::calc_can_pointbuy_mutation( mutation_branch m )
 {
-    int delta_points = ( ( b.points > 0 ) ? -1 :
-                         1 ) //invert points -- good mutations (positive value) cause negative delta points
-                       * std::pow( std::abs( b.points ), MUTATION_POINTBUY_EXPONENTIAL_SCALING );
-    if( is_removing ) {
-        delta_points = -delta_points;    //invert again if removing
-    }
-
-    if( delta_points < 0 ) {
-        delta_points = std::min( ( int )( delta_points * MUTATION_POINTBUY_SPEND_RATIO ), -1 );
-    } else if( delta_points > 0 ) {
-        delta_points = std::max( ( int )( delta_points * MUTATION_POINTBUY_REFUND_RATIO ), 1 );
-    } else {
-        delta_points = MUTATION_POINTBUY_FREE_DELTA;
-    }
-
-    return delta_points;
-}
-
-bool avatar::calc_can_pointbuy_mutation( mutation_branch b )
-{
-    //mutation is invalid
-    // || !b.valid
-    if( b.threshold || b.profession || b.debug || !b.purifiable ||
-        ( !mutation_ok( b.id, false, false ) && !has_trait( b.id ) ) ) {
+    //mutation is locked and unowned
+    if( mutation_pointbuy_unlocks.count( m.id ) == 0 && !has_trait( m.id ) ) {
         return false;
     }
+
+    //mutation needs threshold
+    if( !is_category_allowed( m.category ) ) {
+        return false;
+    }
+    //mutation is blacklisted
+    if( mutation_branch::trait_is_blacklisted( m.id ) ) {
+        return false;
+    }
+    //mutation is incompatible with an installed bionic
+    for( const bionic_id &bid : get_bionics() ) {
+        for( const trait_id &cancelled_mid : bid->canceled_mutations ) {
+            if( cancelled_mid == m.id ) {
+                return false;
+            }
+        }
+    }
     //should remove higher trait instead
-    if( has_higher_trait( b.id ) ) {
+    if( has_higher_trait( m.id ) ) {
+        return false;
+    }
+    //missing threshreq
+    bool has_threshreq = m.threshreq.size() == 0;
+    for( size_t i = 0; !has_threshreq && i < m.threshreq.size(); i++ ) {
+        if( has_trait( m.threshreq[i] ) ) {
+            has_threshreq = true;
+        }
+    }
+    if( !has_threshreq ) {
         return false;
     }
     //can't get there from here in only one step: non-prereq conflict of same type
-    std::vector<trait_id> same_type = get_mutations_in_types( b.types );
+    std::vector<trait_id> same_type = get_mutations_in_types( m.types );
     for( const auto &consider : same_type ) {
-        if( !has_trait( consider ) || consider == b.id ) {
+        if( !has_trait( consider ) || consider == m.id ) {
             continue;
         }
         bool is_prereq = false;
-        if( std::find( b.prereqs.begin(), b.prereqs.end(), consider ) != b.prereqs.end() ) {
+        if( std::find( m.prereqs.begin(), m.prereqs.end(), consider ) != m.prereqs.end() ) {
             is_prereq = true;
         }
-        if( std::find( b.prereqs2.begin(), b.prereqs2.end(), consider ) != b.prereqs2.end() ) {
+        if( std::find( m.prereqs2.begin(), m.prereqs2.end(), consider ) != m.prereqs2.end() ) {
             is_prereq = true;
         }
         if( !is_prereq ) {
@@ -1641,38 +1635,31 @@ bool avatar::calc_can_pointbuy_mutation( mutation_branch b )
         }
     }
     //can't get there from here in only one step: missing prereqs
-    bool prereq1 = b.prereqs.size() == 0, prereq2 = b.prereqs2.size() == 0;
-    for( size_t i = 0; ( !prereq1 ) && i < b.prereqs.size(); i++ ) {
-        if( has_trait( b.prereqs[i] ) ) {
+    bool prereq1 = m.prereqs.size() == 0, prereq2 = m.prereqs2.size() == 0;
+    for( size_t i = 0; ( !prereq1 ) && i < m.prereqs.size(); i++ ) {
+        if( has_trait( m.prereqs[i] ) ) {
             prereq1 = true;
         }
     }
-    for( size_t i = 0; ( !prereq2 ) && i < b.prereqs2.size(); i++ ) {
-        if( has_trait( b.prereqs2[i] ) ) {
+    for( size_t i = 0; ( !prereq2 ) && i < m.prereqs2.size(); i++ ) {
+        if( has_trait( m.prereqs2[i] ) ) {
             prereq2 = true;
         }
     }
     if( !prereq1 || !prereq2 ) {
         return false;
     }
-    //missing threshreq
-    bool has_threshreq = b.threshreq.size() == 0;
-    for( size_t i = 0; !has_threshreq && i < b.threshreq.size(); i++ ) {
-        if( has_trait( b.threshreq[i] ) ) {
-            has_threshreq = true;
-        }
-    }
-    if( !has_threshreq ) {
-        return false;
-    }
     //mutation costs points and would cost more than we have
-    int cost = calc_mutation_pointbuy_delta( b, has_trait( b.id ) );
+    int cost = calc_mutation_pointbuy_delta( m.id );
     if( cost < 0 && -cost > get_mutation_pointbuy_points() ) {
         return false;
     }
     //all checks passed
     return true;
 }
+
+//time required per point, calculated before ratios and before exponential scaling
+const int MUTATION_POINTBUY_TIME_MINUTES = 30;
 
 void avatar::mutate_pointbuy()
 {
@@ -1714,7 +1701,7 @@ void avatar::mutate_pointbuy()
         const trait_id mstr = cb.vTraits[wmenu.ret];
         const auto &mdata = mstr.obj();
 
-        int delta_points = calc_mutation_pointbuy_delta( mdata, has_trait( mstr ) );
+        int delta_points = calc_mutation_pointbuy_delta( mdata.id );
         int time_cost_minutes = std::max( std::abs( mdata.points ), 1 ) * MUTATION_POINTBUY_TIME_MINUTES;
 
         bool proceed = query_yn( string_format(

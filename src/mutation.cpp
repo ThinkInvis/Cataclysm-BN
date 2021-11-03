@@ -922,29 +922,61 @@ void Character::mutate()
     }
 }
 
+//target mutation score -- going below this is more rewarding, going above this is more expensive
+// 10/10/10/10 in stats, balanced traits, plus tip
+const int MUTATION_POINTBUY_TARGET = 46;
+// exponential scaling for change in pointbuy points vs each point above/below ideal
+const float MUTATION_POINTBUY_EXPONENTIAL_SCALING = 2;
+//delta points for changing a free mutation
+const int MUTATION_POINTBUY_FREE_DELTA = -1;
+
 int Character::calc_genetic_score_hypothetical( const trait_id &mut )
 {
-    int score_from = genetic_score(*this);
+    int score_from = genetic_score( *this );
     std::map<trait_id, bool> changes;
-    if (has_trait(mut))
-    {
-        changes = remove_mutation_hypothetical(mut);
-    }
-    else
-    {
-        changes = mutate_towards_hypothetical(mut);
+    if( has_trait( mut ) ) {
+        changes = remove_mutation_hypothetical( mut );
+    } else {
+        changes = mutate_towards_hypothetical( mut );
     }
 
     int score_to = score_from;
-    for (const std::pair<trait_id, bool>& change : changes) {
-        if (change.second) {
+    for( const std::pair<trait_id, bool> &change : changes ) {
+        if( change.second ) {
             score_to += change.first.obj().points;
-        }
-        else {
+        } else {
             score_to -= change.first.obj().points;
         }
     }
     return score_to;
+}
+
+//transforms linear genetic score into exponential pointbuy score
+//each genetic point above/below the target costs more pointbuy points, and genetic @ target = 0 pointbuy
+int calc_pointbuy_score_at_genetic_score( int genetic )
+{
+    int retv = 0;
+    int i = genetic;
+    while( i != MUTATION_POINTBUY_TARGET ) {
+        int cost_here = std::pow( std::abs( i - MUTATION_POINTBUY_TARGET ),
+                                  MUTATION_POINTBUY_EXPONENTIAL_SCALING );
+        if( i > MUTATION_POINTBUY_TARGET ) {
+            i--;
+            retv += cost_here;
+        } else {
+            i++;
+            retv -= cost_here;
+        }
+    }
+    return retv;
+}
+
+int Character::calc_mutation_pointbuy_delta( const trait_id &mut )
+{
+    int score_from = genetic_score( *this );
+    int score_to = calc_genetic_score_hypothetical( mut );
+    return calc_pointbuy_score_at_genetic_score( score_to ) - calc_pointbuy_score_at_genetic_score(
+               score_from );
 }
 
 void Character::old_mutate()
