@@ -951,16 +951,26 @@ class Character : public Creature, public visitable<Character>
         void mutate_category( const std::string &mut_cat );
         /** Mutates toward one of the given mutations, upgrading or removing conflicts if necessary */
         bool mutate_towards( std::vector<trait_id> muts, int num_tries = INT_MAX );
+        /** Find which mutation changes would result from a call to mutate_towards( std::vector<trait_id>, int ) */
+        std::map<trait_id, bool> mutate_towards_hypothetical(std::vector<trait_id> muts, int num_tries = INT_MAX, std::map<trait_id, bool> retv = std::map<trait_id, bool>());
         /** Mutates toward the entered mutation, upgrading or removing conflicts if necessary */
         bool mutate_towards( const trait_id &mut );
+        /** Find which mutation changes would result from a call to mutate_towards( trait_id ) */
+        std::map<trait_id, bool> mutate_towards_hypothetical( const trait_id &mut, std::map<trait_id, bool> retv = std::map<trait_id, bool>() );
         /** Removes a mutation, downgrading to the previous level if possible */
         void remove_mutation( const trait_id &mut, bool silent = false );
+        /** Find which mutation changes would result from a call to remove_mutation */
+        std::map<trait_id, bool> remove_mutation_hypothetical(const trait_id &mut);
+        /** Calculate genetic score after adding/removing this mutation, taking into account upgrades, downgrades, etc. */
+        int calc_genetic_score_hypothetical(const trait_id& mut);
         /** Calculate percentage chances for mutations */
         std::map<trait_id, float> mutation_chances() const;
         /** Returns true if the player has the entered mutation child flag */
         bool has_child_flag( const trait_id &flag ) const;
         /** Removes the mutation's child flag from the player's list */
         void remove_child_flag( const trait_id &flag );
+        /** Find which mutation would be removed by a call to remove_child_flag */
+        trait_id remove_child_flag_hypothetical( const trait_id &flag );
         /** Recalculates mutation_category_level[] values for the player */
         void set_highest_cat_level();
         /** Returns the highest mutation category */
