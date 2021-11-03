@@ -1638,8 +1638,7 @@ bool avatar::calc_can_pointbuy_mutation( mutation_branch m )
         }
     }
     //can't get there from here in only one step: missing prereqs
-    if( !has_trait( m.id ) )
-    {
+    if( !has_trait( m.id ) ) {
         bool prereq1 = m.prereqs.size() == 0, prereq2 = m.prereqs2.size() == 0;
         for( size_t i = 0; ( !prereq1 ) && i < m.prereqs.size(); i++ ) {
             if( has_trait( m.prereqs[i] ) ) {
