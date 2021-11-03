@@ -1638,19 +1638,22 @@ bool avatar::calc_can_pointbuy_mutation( mutation_branch m )
         }
     }
     //can't get there from here in only one step: missing prereqs
-    bool prereq1 = m.prereqs.size() == 0, prereq2 = m.prereqs2.size() == 0;
-    for( size_t i = 0; ( !prereq1 ) && i < m.prereqs.size(); i++ ) {
-        if( has_trait( m.prereqs[i] ) ) {
-            prereq1 = true;
+    if( !has_trait( m.id ) )
+    {
+        bool prereq1 = m.prereqs.size() == 0, prereq2 = m.prereqs2.size() == 0;
+        for( size_t i = 0; ( !prereq1 ) && i < m.prereqs.size(); i++ ) {
+            if( has_trait( m.prereqs[i] ) ) {
+                prereq1 = true;
+            }
         }
-    }
-    for( size_t i = 0; ( !prereq2 ) && i < m.prereqs2.size(); i++ ) {
-        if( has_trait( m.prereqs2[i] ) ) {
-            prereq2 = true;
+        for( size_t i = 0; ( !prereq2 ) && i < m.prereqs2.size(); i++ ) {
+            if( has_trait( m.prereqs2[i] ) ) {
+                prereq2 = true;
+            }
         }
-    }
-    if( !prereq1 || !prereq2 ) {
-        return false;
+        if( !prereq1 || !prereq2 ) {
+            return false;
+        }
     }
     //mutation costs points and would cost more than we have
     int cost = -calc_mutation_pointbuy_delta( m.id );
