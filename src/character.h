@@ -742,6 +742,8 @@ class Character : public Creature, public visitable<Character>
         // In mutation.cpp
         /** Returns true if the player has the entered trait */
         bool has_trait( const trait_id &b ) const override;
+        /** For internal use with hypothetical mutation changes. Returns true if the player will have the entered trait, given a list of changes. */
+        bool has_trait_hypothetical( const trait_id &b, std::map<trait_id, bool> hyp_changes ) const;
         /** Returns true if the player has the entered starting trait */
         bool has_base_trait( const trait_id &b ) const;
         /** Returns true if player has a trait with a flag */

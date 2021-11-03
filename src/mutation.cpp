@@ -1235,7 +1235,7 @@ std::map<trait_id, bool> Character::mutate_towards_hypothetical( std::vector<tra
     while( !muts.empty() && num_tries > 0 ) {
         int i = rng( 0, muts.size() - 1 );
         retv = mutate_towards_hypothetical( muts[i], retv );
-        if( retv[muts[i]] ) {
+        if( retv.count( muts[i] ) > 0 && retv[muts[i]] ) {
             return retv;
         }
 
@@ -1244,6 +1244,15 @@ std::map<trait_id, bool> Character::mutate_towards_hypothetical( std::vector<tra
     }
 
     return retv;
+}
+
+bool Character::has_trait_hypothetical( const trait_id &mut,
+                                        std::map<trait_id, bool> hyp_changes ) const
+{
+    if( hyp_changes.count( mut ) != 0 ) {
+        return hyp_changes[mut];
+    }
+    return has_trait( mut );
 }
 
 trait_id Character::remove_child_flag_hypothetical( const trait_id &mut )
@@ -1286,7 +1295,7 @@ std::map<trait_id, bool> Character::mutate_towards_hypothetical( const trait_id 
     }
 
     for( size_t i = 0; i < cancel.size(); i++ ) {
-        if( !has_trait( cancel[i] ) ) {
+        if( !has_trait_hypothetical( cancel[i], retv ) ) {
             cancel.erase( cancel.begin() + i );
             i--;
         } else if( has_base_trait( cancel[i] ) ) {
@@ -1311,13 +1320,13 @@ std::map<trait_id, bool> Character::mutate_towards_hypothetical( const trait_id 
     }
 
     for( size_t i = 0; ( !prereq1 ) && i < prereq.size(); i++ ) {
-        if( has_trait( prereq[i] ) ) {
+        if( has_trait_hypothetical( prereq[i], retv ) ) {
             prereq1 = true;
         }
     }
 
     for( size_t i = 0; ( !prereq2 ) && i < prereqs2.size(); i++ ) {
-        if( has_trait( prereqs2[i] ) ) {
+        if( has_trait_hypothetical( prereqs2[i], retv ) ) {
             prereq2 = true;
         }
     }
@@ -1352,7 +1361,7 @@ std::map<trait_id, bool> Character::mutate_towards_hypothetical( const trait_id 
     }
 
     for( size_t i = 0; !has_threshreq && i < threshreq.size(); i++ ) {
-        if( has_trait( threshreq[i] ) ) {
+        if( has_trait_hypothetical( threshreq[i], retv ) ) {
             has_threshreq = true;
         }
     }
@@ -1367,7 +1376,7 @@ std::map<trait_id, bool> Character::mutate_towards_hypothetical( const trait_id 
     trait_id replacing = trait_id::NULL_ID();
     prereq = mdata.prereqs; // Reset it
     for( auto &elem : prereq ) {
-        if( has_trait( elem ) ) {
+        if( has_trait_hypothetical( elem, retv ) ) {
             const trait_id &pre = elem;
             const auto &p = pre.obj();
             for( size_t j = 0; !replacing && j < p.replacements.size(); j++ ) {
@@ -1382,7 +1391,7 @@ std::map<trait_id, bool> Character::mutate_towards_hypothetical( const trait_id 
     trait_id replacing2 = trait_id::NULL_ID();
     prereq = mdata.prereqs2; // Reset it
     for( auto &elem : prereq ) {
-        if( has_trait( elem ) ) {
+        if( has_trait_hypothetical( elem, retv ) ) {
             const trait_id &pre2 = elem;
             const auto &p = pre2.obj();
             for( size_t j = 0; !replacing2 && j < p.replacements.size(); j++ ) {
@@ -1407,7 +1416,7 @@ std::map<trait_id, bool> Character::mutate_towards_hypothetical( const trait_id 
     }
 
     const auto iter = my_mutations.find( mut );
-    if( iter == my_mutations.end() ) {
+    if( iter == my_mutations.end() && retv.count( mut ) == 0 ) {
         retv.emplace( mut, true );
     }
 
