@@ -196,6 +196,8 @@ class avatar : public player
         void mutate_pointbuy();
         /** Determine whether the target mutation is valid for pointbuy */
         bool calc_can_pointbuy_mutation( mutation_branch b );
+        /** Unlock the given mutation for pointbuy, return false iff it was already unlocked */
+        bool try_unlock_mutation( const trait_id &mut );
 
         faction *get_faction() const override;
         // Set in npc::talk_to_you for use in further NPC interactions

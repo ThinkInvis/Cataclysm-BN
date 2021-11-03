@@ -8,6 +8,7 @@
 #include <numeric>
 #include <unordered_set>
 
+#include "avatar.h"
 #include "avatar_action.h"
 #include "basecamp.h"
 #include "bionics.h"
@@ -979,6 +980,15 @@ int Character::calc_mutation_pointbuy_delta( const trait_id &mut )
                score_from );
 }
 
+bool avatar::try_unlock_mutation( const trait_id &mut )
+{
+    if( mutation_pointbuy_unlocks.count( mut ) > 0 ) {
+        return false;
+    }
+    mutation_pointbuy_unlocks.emplace( mut );
+    return true;
+}
+
 void Character::old_mutate()
 {
     bool force_bad = one_in( 3 );
@@ -1167,6 +1177,20 @@ void Character::mutate_category( const std::string &cat )
         if( !mutation_ok( valid[i], force_good, force_bad ) ) {
             valid.erase( valid.begin() + i );
             i--;
+        }
+    }
+
+    // MPb: Possibly learn some mutations
+    if( get_option<bool>( "MUTATION_POINTBUY" ) && is_avatar() ) {
+        int unlocks = 0;
+        for( auto &trait : valid ) {
+            if( one_in( 5 ) ) {
+                unlocks += as_avatar()->try_unlock_mutation( trait ) ? 1 : 0;
+            }
+        }
+        if( unlocks > 0 ) {
+            add_msg_if_player(
+                _( "Information floods your mind.  %d new mutations are available for pointbuy." ), unlocks );
         }
     }
 
