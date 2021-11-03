@@ -1205,41 +1205,44 @@ bool Character::mutate_towards( std::vector<trait_id> muts, int num_tries )
     return false;
 }
 
-std::map<trait_id, bool> Character::mutate_towards_hypothetical( std::vector<trait_id> muts, int num_tries, std::map<trait_id, bool> retv )
+std::map<trait_id, bool> Character::mutate_towards_hypothetical( std::vector<trait_id> muts,
+        int num_tries, std::map<trait_id, bool> retv )
 {
-    while (!muts.empty() && num_tries > 0) {
-        int i = rng(0, muts.size() - 1);
-        retv = mutate_towards_hypothetical(muts[i], retv);
-        if (retv[muts[i]]) {
+    while( !muts.empty() && num_tries > 0 ) {
+        int i = rng( 0, muts.size() - 1 );
+        retv = mutate_towards_hypothetical( muts[i], retv );
+        if( retv[muts[i]] ) {
             return retv;
         }
 
-        muts.erase(muts.begin() + i);
+        muts.erase( muts.begin() + i );
         --num_tries;
     }
 
     return retv;
 }
 
-trait_id Character::remove_child_flag_hypothetical( const trait_id& mut ) {
-    for (auto& elem : mut->replacements) {
-        const trait_id& tmp = elem;
-        if (has_trait(tmp)) {
+trait_id Character::remove_child_flag_hypothetical( const trait_id &mut )
+{
+    for( auto &elem : mut->replacements ) {
+        const trait_id &tmp = elem;
+        if( has_trait( tmp ) ) {
             return tmp;
-        }
-        else if (has_child_flag(tmp)) {
-            return remove_child_flag_hypothetical(tmp);
+        } else if( has_child_flag( tmp ) ) {
+            return remove_child_flag_hypothetical( tmp );
         }
     }
 }
 
-std::map<trait_id, bool> Character::mutate_towards_hypothetical( const trait_id& mut, std::map<trait_id, bool> retv ) {
-    if (has_child_flag(mut)) {
-        retv.emplace(mut, true);
-        retv.emplace(remove_child_flag_hypothetical(mut), false);
+std::map<trait_id, bool> Character::mutate_towards_hypothetical( const trait_id &mut,
+        std::map<trait_id, bool> retv )
+{
+    if( has_child_flag( mut ) ) {
+        retv.emplace( mut, true );
+        retv.emplace( remove_child_flag_hypothetical( mut ), false );
         return retv;
     }
-    const mutation_branch& mdata = mut.obj();
+    const mutation_branch &mdata = mut.obj();
 
     bool has_prereqs = false;
     bool prereq1 = false;
@@ -1248,35 +1251,34 @@ std::map<trait_id, bool> Character::mutate_towards_hypothetical( const trait_id&
     std::vector<trait_id> prereq = mdata.prereqs;
     std::vector<trait_id> prereqs2 = mdata.prereqs2;
     std::vector<trait_id> cancel = mdata.cancels;
-    std::vector<trait_id> same_type = get_mutations_in_types(mdata.types);
-    std::vector<trait_id> all_prereqs = get_all_mutation_prereqs(mut);
+    std::vector<trait_id> same_type = get_mutations_in_types( mdata.types );
+    std::vector<trait_id> all_prereqs = get_all_mutation_prereqs( mut );
 
     // Check mutations of the same type - except for the ones we might need for pre-reqs
-    for (const auto& consider : same_type) {
-        if (std::find(all_prereqs.begin(), all_prereqs.end(), consider) == all_prereqs.end()) {
-            cancel.push_back(consider);
+    for( const auto &consider : same_type ) {
+        if( std::find( all_prereqs.begin(), all_prereqs.end(), consider ) == all_prereqs.end() ) {
+            cancel.push_back( consider );
         }
     }
 
-    for (size_t i = 0; i < cancel.size(); i++) {
-        if (!has_trait(cancel[i])) {
-            cancel.erase(cancel.begin() + i);
+    for( size_t i = 0; i < cancel.size(); i++ ) {
+        if( !has_trait( cancel[i] ) ) {
+            cancel.erase( cancel.begin() + i );
             i--;
-        }
-        else if (has_base_trait(cancel[i])) {
+        } else if( has_base_trait( cancel[i] ) ) {
             //If we have the trait, but it's a base trait, don't allow it to be removed normally
-            canceltrait.push_back(cancel[i]);
-            cancel.erase(cancel.begin() + i);
+            canceltrait.push_back( cancel[i] );
+            cancel.erase( cancel.begin() + i );
             i--;
         }
     }
 
-    for (size_t i = 0; i < cancel.size(); i++) {
-        if (!cancel.empty()) {
+    for( size_t i = 0; i < cancel.size(); i++ ) {
+        if( !cancel.empty() ) {
             trait_id removed = cancel[i];
-            auto removals = remove_mutation_hypothetical(removed);
-            retv.insert(removals.begin(), removals.end());
-            cancel.erase(cancel.begin() + i);
+            auto removals = remove_mutation_hypothetical( removed );
+            retv.insert( removals.begin(), removals.end() );
+            cancel.erase( cancel.begin() + i );
             i--;
             // This checks for cases where one trait knocks out several others
             // Probably a better way, but gets it Fixed Now--KA101
@@ -1284,27 +1286,26 @@ std::map<trait_id, bool> Character::mutate_towards_hypothetical( const trait_id&
         }
     }
 
-    for (size_t i = 0; (!prereq1) && i < prereq.size(); i++) {
-        if (has_trait(prereq[i])) {
+    for( size_t i = 0; ( !prereq1 ) && i < prereq.size(); i++ ) {
+        if( has_trait( prereq[i] ) ) {
             prereq1 = true;
         }
     }
 
-    for (size_t i = 0; (!prereq2) && i < prereqs2.size(); i++) {
-        if (has_trait(prereqs2[i])) {
+    for( size_t i = 0; ( !prereq2 ) && i < prereqs2.size(); i++ ) {
+        if( has_trait( prereqs2[i] ) ) {
             prereq2 = true;
         }
     }
 
-    if (prereq1 && prereq2) {
+    if( prereq1 && prereq2 ) {
         has_prereqs = true;
     }
 
-    if (!has_prereqs && (!prereq.empty() || !prereqs2.empty())) {
-        if (!prereq1 && !prereq.empty()) {
+    if( !has_prereqs && ( !prereq.empty() || !prereqs2.empty() ) ) {
+        if( !prereq1 && !prereq.empty() ) {
             return mutate_towards_hypothetical( prereq, INT_MAX, retv );
-        }
-        else if (!prereq2 && !prereqs2.empty()) {
+        } else if( !prereq2 && !prereqs2.empty() ) {
             return mutate_towards_hypothetical( prereqs2, INT_MAX, retv );
         }
     }
@@ -1317,36 +1318,36 @@ std::map<trait_id, bool> Character::mutate_towards_hypothetical( const trait_id&
 
     // It shouldn't pick a Threshold anyway--they're supposed to be non-Valid
     // and aren't categorized. This can happen if someone makes a threshold mutation into a prerequisite.
-    if (threshold) {
-        add_msg_if_player(_("You feel something straining deep inside you, yearning to be free…"));
+    if( threshold ) {
+        add_msg_if_player( _( "You feel something straining deep inside you, yearning to be free…" ) );
         return retv;
     }
-    if (profession) {
+    if( profession ) {
         // Profession picks fail silently
         return retv;
     }
 
-    for (size_t i = 0; !has_threshreq && i < threshreq.size(); i++) {
-        if (has_trait(threshreq[i])) {
+    for( size_t i = 0; !has_threshreq && i < threshreq.size(); i++ ) {
+        if( has_trait( threshreq[i] ) ) {
             has_threshreq = true;
         }
     }
 
     // No crossing The Threshold by simply not having it
-    if (!has_threshreq && !threshreq.empty()) {
-        add_msg_if_player(_("You feel something straining deep inside you, yearning to be free…"));
+    if( !has_threshreq && !threshreq.empty() ) {
+        add_msg_if_player( _( "You feel something straining deep inside you, yearning to be free…" ) );
         return retv;
     }
 
     // Check if one of the prerequisites that we have TURNS INTO this one
     trait_id replacing = trait_id::NULL_ID();
     prereq = mdata.prereqs; // Reset it
-    for (auto& elem : prereq) {
-        if (has_trait(elem)) {
-            const trait_id& pre = elem;
-            const auto& p = pre.obj();
-            for (size_t j = 0; !replacing && j < p.replacements.size(); j++) {
-                if (p.replacements[j] == mut) {
+    for( auto &elem : prereq ) {
+        if( has_trait( elem ) ) {
+            const trait_id &pre = elem;
+            const auto &p = pre.obj();
+            for( size_t j = 0; !replacing && j < p.replacements.size(); j++ ) {
+                if( p.replacements[j] == mut ) {
                     replacing = pre;
                 }
             }
@@ -1356,36 +1357,36 @@ std::map<trait_id, bool> Character::mutate_towards_hypothetical( const trait_id&
     // Loop through again for prereqs2
     trait_id replacing2 = trait_id::NULL_ID();
     prereq = mdata.prereqs2; // Reset it
-    for (auto& elem : prereq) {
-        if (has_trait(elem)) {
-            const trait_id& pre2 = elem;
-            const auto& p = pre2.obj();
-            for (size_t j = 0; !replacing2 && j < p.replacements.size(); j++) {
-                if (p.replacements[j] == mut) {
+    for( auto &elem : prereq ) {
+        if( has_trait( elem ) ) {
+            const trait_id &pre2 = elem;
+            const auto &p = pre2.obj();
+            for( size_t j = 0; !replacing2 && j < p.replacements.size(); j++ ) {
+                if( p.replacements[j] == mut ) {
                     replacing2 = pre2;
                 }
             }
         }
     }
 
-    if (replacing) {
-        auto removals = remove_mutation_hypothetical(replacing);
-        retv.insert(removals.begin(), removals.end());
+    if( replacing ) {
+        auto removals = remove_mutation_hypothetical( replacing );
+        retv.insert( removals.begin(), removals.end() );
     }
-    if (replacing2) {
-        auto removals = remove_mutation_hypothetical(replacing2);
-        retv.insert(removals.begin(), removals.end());
+    if( replacing2 ) {
+        auto removals = remove_mutation_hypothetical( replacing2 );
+        retv.insert( removals.begin(), removals.end() );
     }
-    for (const auto& i : canceltrait) {
-        auto removals = remove_mutation_hypothetical(i);
-        retv.insert(removals.begin(), removals.end());
+    for( const auto &i : canceltrait ) {
+        auto removals = remove_mutation_hypothetical( i );
+        retv.insert( removals.begin(), removals.end() );
     }
 
-    const auto iter = my_mutations.find(mut);
-    if (iter == my_mutations.end()) {
-        retv.emplace(mut, true);
+    const auto iter = my_mutations.find( mut );
+    if( iter == my_mutations.end() ) {
+        retv.emplace( mut, true );
     }
-    
+
     return retv;
 }
 
@@ -1614,19 +1615,19 @@ bool Character::mutate_towards( const trait_id &mut )
     return true;
 }
 
-std::map<trait_id, bool> Character::remove_mutation_hypothetical(const trait_id& mut)
+std::map<trait_id, bool> Character::remove_mutation_hypothetical( const trait_id &mut )
 {
     std::map<trait_id, bool> retv;
 
-    const auto& mdata = mut.obj();
+    const auto &mdata = mut.obj();
     // Check if there's a prerequisite we should shrink back into
     trait_id replacing = trait_id::NULL_ID();
     std::vector<trait_id> originals = mdata.prereqs;
-    for (size_t i = 0; !replacing && i < originals.size(); i++) {
+    for( size_t i = 0; !replacing && i < originals.size(); i++ ) {
         trait_id pre = originals[i];
-        const auto& p = pre.obj();
-        for (size_t j = 0; !replacing && j < p.replacements.size(); j++) {
-            if (p.replacements[j] == mut) {
+        const auto &p = pre.obj();
+        for( size_t j = 0; !replacing && j < p.replacements.size(); j++ ) {
+            if( p.replacements[j] == mut ) {
                 replacing = pre;
             }
         }
@@ -1634,11 +1635,11 @@ std::map<trait_id, bool> Character::remove_mutation_hypothetical(const trait_id&
 
     trait_id replacing2 = trait_id::NULL_ID();
     std::vector<trait_id> originals2 = mdata.prereqs2;
-    for (size_t i = 0; !replacing2 && i < originals2.size(); i++) {
+    for( size_t i = 0; !replacing2 && i < originals2.size(); i++ ) {
         trait_id pre2 = originals2[i];
-        const auto& p = pre2.obj();
-        for (size_t j = 0; !replacing2 && j < p.replacements.size(); j++) {
-            if (p.replacements[j] == mut) {
+        const auto &p = pre2.obj();
+        for( size_t j = 0; !replacing2 && j < p.replacements.size(); j++ ) {
+            if( p.replacements[j] == mut ) {
                 replacing2 = pre2;
             }
         }
@@ -1646,57 +1647,61 @@ std::map<trait_id, bool> Character::remove_mutation_hypothetical(const trait_id&
 
     // See if this mutation is canceled by a base trait
     //Only if there's no prerequisite to shrink to, thus we're at the bottom of the trait line
-    if (!replacing) {
+    if( !replacing ) {
         //Check each mutation until we reach the end or find a trait to revert to
-        for (auto& iter : mutation_branch::get_all()) {
+        for( auto &iter : mutation_branch::get_all() ) {
             //See if it's in our list of base traits but not active
-            if (has_base_trait(iter.id) && !has_trait(iter.id)) {
+            if( has_base_trait( iter.id ) && !has_trait( iter.id ) ) {
                 //See if that base trait cancels the mutation we are using
                 std::vector<trait_id> traitcheck = iter.cancels;
-                if (!traitcheck.empty()) {
-                    for (size_t j = 0; !replacing && j < traitcheck.size(); j++) {
-                        if (traitcheck[j] == mut) {
-                            replacing = (iter.id);
+                if( !traitcheck.empty() ) {
+                    for( size_t j = 0; !replacing && j < traitcheck.size(); j++ ) {
+                        if( traitcheck[j] == mut ) {
+                            replacing = ( iter.id );
                         }
                     }
                 }
             }
-            if (replacing) {
+            if( replacing ) {
                 break;
             }
         }
     }
 
     // Duplicated for prereq2
-    if (!replacing2) {
+    if( !replacing2 ) {
         //Check each mutation until we reach the end or find a trait to revert to
-        for (auto& iter : mutation_branch::get_all()) {
+        for( auto &iter : mutation_branch::get_all() ) {
             //See if it's in our list of base traits but not active
-            if (has_base_trait(iter.id) && !has_trait(iter.id)) {
+            if( has_base_trait( iter.id ) && !has_trait( iter.id ) ) {
                 //See if that base trait cancels the mutation we are using
                 std::vector<trait_id> traitcheck = iter.cancels;
-                if (!traitcheck.empty()) {
-                    for (size_t j = 0; !replacing2 && j < traitcheck.size(); j++) {
-                        if (traitcheck[j] == mut && (iter.id) != replacing) {
-                            replacing2 = (iter.id);
+                if( !traitcheck.empty() ) {
+                    for( size_t j = 0; !replacing2 && j < traitcheck.size(); j++ ) {
+                        if( traitcheck[j] == mut && ( iter.id ) != replacing ) {
+                            replacing2 = ( iter.id );
                         }
                     }
                 }
             }
-            if (replacing2) {
+            if( replacing2 ) {
                 break;
             }
         }
     }
 
     // make sure we don't toggle a mutation or trait twice, or it will cancel itself out.
-    if (replacing == replacing2) {
+    if( replacing == replacing2 ) {
         replacing2 = trait_id::NULL_ID();
     }
 
-    if(replacing) retv.emplace(replacing, true);
-    if (replacing2) retv.emplace(replacing2, true);
-    retv.emplace(mut, false);
+    if( replacing ) {
+        retv.emplace( replacing, true );
+    }
+    if( replacing2 ) {
+        retv.emplace( replacing2, true );
+    }
+    retv.emplace( mut, false );
     return retv;
 }
 
