@@ -1586,7 +1586,10 @@ bool avatar::calc_can_pointbuy_mutation( mutation_branch m )
     if( mutation_pointbuy_unlocks.count( m.id ) == 0 && !has_trait( m.id ) ) {
         return false;
     }
-
+    //special mutation type -- catches things like chargen appearance options e.g. hair that the has_trait save above let through
+    if( m.threshold || m.debug || m.profession || !m.purifiable ) {
+        return false;
+    }
     //mutation needs threshold
     if( !is_category_allowed( m.category ) ) {
         return false;
