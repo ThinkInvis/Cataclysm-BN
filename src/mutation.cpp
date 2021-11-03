@@ -1271,8 +1271,8 @@ std::map<trait_id, bool> Character::mutate_towards_hypothetical( const trait_id 
         std::map<trait_id, bool> retv )
 {
     if( has_child_flag( mut ) ) {
-        retv.emplace( mut, true );
-        retv.emplace( remove_child_flag_hypothetical( mut ), false );
+        retv[mut] = true;
+        retv[remove_child_flag_hypothetical( mut )] = false;
         return retv;
     }
     const mutation_branch &mdata = mut.obj();
@@ -1402,21 +1402,18 @@ std::map<trait_id, bool> Character::mutate_towards_hypothetical( const trait_id 
     }
 
     if( replacing ) {
-        auto removals = remove_mutation_hypothetical( replacing, retv );
-        retv.insert( removals.begin(), removals.end() );
+        retv = remove_mutation_hypothetical( replacing, retv );
     }
     if( replacing2 ) {
-        auto removals = remove_mutation_hypothetical( replacing2, retv );
-        retv.insert( removals.begin(), removals.end() );
+        retv = remove_mutation_hypothetical( replacing2, retv );
     }
     for( const auto &i : canceltrait ) {
-        auto removals = remove_mutation_hypothetical( i, retv );
-        retv.insert( removals.begin(), removals.end() );
+        retv = remove_mutation_hypothetical( i, retv );
     }
 
     const auto iter = my_mutations.find( mut );
     if( iter == my_mutations.end() && retv.count( mut ) == 0 ) {
-        retv.emplace( mut, true );
+        retv[mut] = true;
     }
 
     return retv;
@@ -1727,12 +1724,12 @@ std::map<trait_id, bool> Character::remove_mutation_hypothetical( const trait_id
     }
 
     if( replacing ) {
-        retv.emplace( replacing, true );
+        retv[replacing] = true;
     }
     if( replacing2 ) {
-        retv.emplace( replacing2, true );
+        retv[replacing2] = true;
     }
-    retv.emplace( mut, false );
+    retv[mut] = false;
     return retv;
 }
 
