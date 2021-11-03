@@ -606,6 +606,14 @@ bool avatar::create( character_type type, const std::string &tempname )
         }
     }
 
+    // Unlock generic mutations for pointbuy; specialized mutations may unlock later when specialized mutagen is used
+    for( const auto &b : mutation_branch::get_all() )
+    {
+        if( !b.threshold && !b.profession && !b.debug && b.valid && b.purifiable ) {
+            mutation_pointbuy_unlocks.insert( b.id );
+        }
+    }
+
     prof->learn_spells( *this );
 
     // Ensure that persistent morale effects (e.g. Optimist) are present at the start.

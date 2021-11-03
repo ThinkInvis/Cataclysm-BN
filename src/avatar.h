@@ -260,6 +260,7 @@ class avatar : public player
         int per_upgrade = 0;
 
         int mutation_pointbuy_points = 0;
+        std::unordered_set<trait_id> mutation_pointbuy_unlocks;
 
         monster_visible_info mon_visible;
 };
