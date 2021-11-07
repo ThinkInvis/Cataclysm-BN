@@ -208,5 +208,12 @@
     "info": "Makes mutation more balanced and interesting.",
     "stype": "bool",
     "value": true
+  },
+  {
+    "type": "EXTERNAL_OPTION",
+    "name": "MUTATION_POINTBUY",
+    "info": "Enables access to the Mutation Pointbuy mod menu.",
+    "stype": "bool",
+    "value": false
   }
 ]
