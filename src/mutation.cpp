@@ -943,9 +943,9 @@ int Character::calc_genetic_score_hypothetical( const trait_id &mut )
 
     int score_to = score_from;
     for( const std::pair<trait_id, bool> &change : changes ) {
-        if( change.second ) {
+        if( change.second && !has_trait( change.first ) ) {
             score_to += change.first.obj().points;
-        } else {
+        } else if( !change.second && has_trait( change.first ) ) {
             score_to -= change.first.obj().points;
         }
     }
